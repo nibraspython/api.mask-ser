@@ -4,20 +4,30 @@ const fs = require('fs');
 
 const app = express();
 
-// Root Route (Fixes "Cannot GET /")
+// Root Route (For API Status)
 app.get('/', (req, res) => {
-  res.send('API is working! Example: /Actions/Bully.json');
+  res.send('API is working! Example: /Naruto.json or /Actions/Bully.json');
 });
 
-// Dynamic Route to Serve JSON Files
+// Serve JSON Files from Root Directory
+app.get('/:file', (req, res) => {
+  const file = req.params.file;
+  const filePath = path.join(__dirname, file);
+
+  if (fs.existsSync(filePath) && file.endsWith('.json')) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).json({ error: 'File not found' });
+  }
+});
+
+// Serve JSON Files from Subfolders (e.g., /Actions/Bully.json)
 app.get('/:folder/:file', (req, res) => {
   const folder = req.params.folder;
   const file = req.params.file;
-
   const filePath = path.join(__dirname, folder, file);
 
-  // Check if the file exists before sending it
-  if (fs.existsSync(filePath)) {
+  if (fs.existsSync(filePath) && file.endsWith('.json')) {
     res.sendFile(filePath);
   } else {
     res.status(404).json({ error: 'File not found' });
@@ -26,4 +36,3 @@ app.get('/:folder/:file', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
-
