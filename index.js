@@ -5,15 +5,15 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Serve all files, including JSON
+// Serve static files (needed for JSON files)
 app.use(express.static(__dirname));
 
-// Function to load and serve JSON files dynamically
+// Function to serve images or videos from JSON
 const serveJsonMedia = (req, res) => {
     const jsonFileName = req.path.substring(1); // Remove leading "/"
     const filePath = path.join(__dirname, jsonFileName);
 
-    // Check if the requested JSON file exists
+    // Check if the JSON file exists
     if (!fs.existsSync(filePath)) {
         return res.status(404).send("JSON file not found.");
     }
@@ -33,17 +33,19 @@ const serveJsonMedia = (req, res) => {
             const isVideo = /\.(mp4|webm|ogg)$/i.test(mediaUrl);
             const isImage = /\.(jpg|jpeg|png|gif)$/i.test(mediaUrl);
 
+            // HTML response to display image/video
             res.send(`
                 <html>
                 <head>
                     <title>Random Media Viewer</title>
                     <style>
-                        body { text-align: center; font-family: Arial, sans-serif; margin: 50px; }
-                        img, video { max-width: 100%; height: auto; border: 2px solid black; }
-                        p { font-size: 18px; margin-top: 10px; }
+                        body { text-align: center; font-family: Arial, sans-serif; margin: 50px; background-color: #111; color: white; }
+                        img, video { max-width: 80%; height: auto; border: 3px solid white; margin: 20px 0; }
+                        a { color: yellow; font-size: 18px; }
                     </style>
                 </head>
                 <body>
+                    <h2>Random Media Viewer</h2>
                     ${isImage ? `<img src="${mediaUrl}" alt="Random Image">` : ""}
                     ${isVideo ? `<video controls autoplay><source src="${mediaUrl}" type="video/mp4"></video>` : ""}
                     <p>Source: <a href="${mediaUrl}" target="_blank">${mediaUrl}</a></p>
@@ -56,7 +58,7 @@ const serveJsonMedia = (req, res) => {
     });
 };
 
-// Dynamic route to handle any JSON file request
+// Dynamic route for any JSON file
 app.get("/*.json", serveJsonMedia);
 
 // Start the server
