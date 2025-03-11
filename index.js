@@ -9,38 +9,46 @@ app.get('/*', (req, res) => {
 
     // Check if the file exists and is NOT a directory
     if (fs.existsSync(filePath) && fs.lstatSync(filePath).isFile()) {
-        try {
-            const jsonData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-            const mediaList = jsonData.result;
+        const fileExtension = path.extname(filePath).toLowerCase();
 
-            if (mediaList.length > 0) {
-                const randomMedia = mediaList[Math.floor(Math.random() * mediaList.length)];
+        if (fileExtension === '.json') {
+            // If JSON file, parse and return random media
+            try {
+                const jsonData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+                const mediaList = jsonData.result;
 
-                // Detect if it's an image or video
-                const isVideo = /\.(mp4|webm|mov|avi)$/i.test(randomMedia);
-                const isImage = /\.(jpg|jpeg|png|gif)$/i.test(randomMedia);
+                if (Array.isArray(mediaList) && mediaList.length > 0) {
+                    const randomMedia = mediaList[Math.floor(Math.random() * mediaList.length)];
 
-                if (isImage) {
-                    res.send(`
-                        <style>body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: black; }</style>
-                        <img src="${randomMedia}" style="max-width:100%; max-height:100%;" />
-                    `);
-                } else if (isVideo) {
-                    res.send(`
-                        <style>body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: black; }</style>
-                        <video controls autoplay style="max-width:100%; max-height:100%;">
-                            <source src="${randomMedia}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                    `);
+                    // Detect if it's an image or video
+                    const isVideo = /\.(mp4|webm|mov|avi)$/i.test(randomMedia);
+                    const isImage = /\.(jpg|jpeg|png|gif)$/i.test(randomMedia);
+
+                    if (isImage) {
+                        res.send(`
+                            <style>body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: black; }</style>
+                            <img src="${randomMedia}" style="max-width:100%; max-height:100%;" />
+                        `);
+                    } else if (isVideo) {
+                        res.send(`
+                            <style>body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: black; }</style>
+                            <video controls autoplay style="max-width:100%; max-height:100%;">
+                                <source src="${randomMedia}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        `);
+                    } else {
+                        res.status(400).json({ error: 'Invalid media format!' });
+                    }
                 } else {
-                    res.status(400).send('Invalid file format!');
+                    res.status(404).json({ error: 'No media found in JSON' });
                 }
-            } else {
-                res.status(404).json({ error: 'No media found in JSON' });
+            } catch (error) {
+                res.status(500).json({ error: 'Error parsing JSON file!' });
             }
-        } catch (error) {
-            res.status(500).json({ error: 'Error parsing JSON file!' });
+        } else {
+            // If not a JSON file, return the file directly
+            res.sendFile(filePath);
         }
     } else {
         res.status(404).json({ error: 'File not found!' });
