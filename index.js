@@ -3,28 +3,24 @@ const fs = require("fs");
 const path = require("path");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Serve all files (including JSON) from the current directory
+// Serve all files, including JSON
 app.use(express.static(__dirname));
 
-const getRandomJsonFile = () => {
-    const files = fs.readdirSync(__dirname).filter(file => file.endsWith(".json"));
-    if (files.length === 0) return null;
-    return files[Math.floor(Math.random() * files.length)];
-};
+// Function to load and serve JSON files dynamically
+const serveJsonMedia = (req, res) => {
+    const jsonFileName = req.path.substring(1); // Remove leading "/"
+    const filePath = path.join(__dirname, jsonFileName);
 
-app.get("/", (req, res) => {
-    const randomJsonFile = getRandomJsonFile();
-    if (!randomJsonFile) {
-        return res.status(404).send("No JSON files found.");
+    // Check if the requested JSON file exists
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).send("JSON file not found.");
     }
 
-    const filePath = path.join(__dirname, randomJsonFile);
+    // Read and parse the JSON file
     fs.readFile(filePath, "utf8", (err, data) => {
-        if (err) {
-            return res.status(500).send("Error reading file.");
-        }
+        if (err) return res.status(500).send("Error reading file.");
 
         try {
             const jsonData = JSON.parse(data);
@@ -32,6 +28,7 @@ app.get("/", (req, res) => {
                 return res.status(500).send("Invalid JSON format.");
             }
 
+            // Randomly select one media URL
             const mediaUrl = jsonData.result[Math.floor(Math.random() * jsonData.result.length)];
             const isVideo = /\.(mp4|webm|ogg)$/i.test(mediaUrl);
             const isImage = /\.(jpg|jpeg|png|gif)$/i.test(mediaUrl);
@@ -57,6 +54,10 @@ app.get("/", (req, res) => {
             res.status(500).send("Error parsing JSON file.");
         }
     });
-});
+};
 
+// Dynamic route to handle any JSON file request
+app.get("/*.json", serveJsonMedia);
+
+// Start the server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
