@@ -5,7 +5,9 @@ const path = require("path");
 const app = express();
 const PORT = 3000;
 
-// Function to get all JSON files in the directory
+// Serve all files (including JSON) from the current directory
+app.use(express.static(__dirname));
+
 const getRandomJsonFile = () => {
     const files = fs.readdirSync(__dirname).filter(file => file.endsWith(".json"));
     if (files.length === 0) return null;
@@ -30,14 +32,10 @@ app.get("/", (req, res) => {
                 return res.status(500).send("Invalid JSON format.");
             }
 
-            // Select a random media URL
             const mediaUrl = jsonData.result[Math.floor(Math.random() * jsonData.result.length)];
-
-            // Detect media type
             const isVideo = /\.(mp4|webm|ogg)$/i.test(mediaUrl);
             const isImage = /\.(jpg|jpeg|png|gif)$/i.test(mediaUrl);
 
-            // Return HTML to display the media
             res.send(`
                 <html>
                 <head>
