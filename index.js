@@ -15,7 +15,7 @@ const getRandomJsonFile = () => {
 app.get("/", (req, res) => {
     const randomJsonFile = getRandomJsonFile();
     if (!randomJsonFile) {
-        return res.status(404).send("No JSON files found in the directory.");
+        return res.status(404).send("No JSON files found.");
     }
 
     const filePath = path.join(__dirname, randomJsonFile);
