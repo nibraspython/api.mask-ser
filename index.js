@@ -4,37 +4,46 @@ const path = require('path');
 
 const app = express();
 
-// Root Route
-app.get('/', (req, res) => {
-  res.send('API is working! Example: /random-video');
-});
+// Dynamic route: Automatically detects file type (image/video)
+app.get('/:filename', (req, res) => {
+  const fileName = req.params.filename; // Get file name from URL
+  const filePath = path.join(__dirname, fileName);
 
-// Random Video Route
-app.get('/random-video', (req, res) => {
-  const filePath = path.join(__dirname, 'Naruto.json'); // Change file name if needed
-  
   if (fs.existsSync(filePath)) {
     const jsonData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-    const videos = jsonData.result;
-    
-    if (videos.length > 0) {
-      const randomVideo = videos[Math.floor(Math.random() * videos.length)];
-      
-      res.send(`
-        <h2>Random Video</h2>
-        <video controls autoplay width="600">
-          <source src="${randomVideo}" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
-        <br><a href="/random-video">Get Another Video</a>
-      `);
+    const mediaList = jsonData.result;
+
+    if (mediaList.length > 0) {
+      const randomMedia = mediaList[Math.floor(Math.random() * mediaList.length)];
+
+      // Check file type (image or video)
+      const isVideo = /\.(mp4|webm|mov|avi)$/i.test(randomMedia);
+      const isImage = /\.(jpg|jpeg|png|gif)$/i.test(randomMedia);
+
+      if (isImage) {
+        res.send(`
+          <style>body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: black; }</style>
+          <img src="${randomMedia}" style="max-width:100%; max-height:100%;" />
+        `);
+      } else if (isVideo) {
+        res.send(`
+          <style>body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: black; }</style>
+          <video controls autoplay style="max-width:100%; max-height:100%;">
+            <source src="${randomMedia}" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        `);
+      } else {
+        res.status(400).send('Invalid file format!');
+      }
     } else {
-      res.status(404).json({ error: 'No videos found in the JSON file' });
+      res.status(404).json({ error: 'No media files found in the JSON' });
     }
   } else {
-    res.status(404).json({ error: 'JSON file not found' });
+    res.status(404).json({ error: 'File not found!' });
   }
 });
 
+// Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
